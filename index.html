@@ -1,0 +1,179 @@
+<html> 
+	<head>
+	<title>TODO App</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1"> 
+	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.css" />
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js">
+	</script>
+	<script src="http://code.jquery.com/mobile/1.1.0/jquery.mobile-1.1.0.min.js">
+	</script>
+	</head> 
+	<body onload="onBodyLoad()"> 
+		<div data-role="page" id="home">
+		<div data-role="header" data-position="inline" data-theme="b">
+			<a href="#" data-theme="c" data-icon="delete" iconpos="notext" data-position="inline" data-rel="dialog" id="clear">Clear</a>
+			<h1>TODO</h1>
+			<a href="#add" data-icon="add" iconpos="notext" data-position="inline" data-rel="dialog">Add</a>
+		</div><p>
+		<div class="content-primary" style="margin:3px;">	
+			<ul data-role="listview" data-inset="true" data-split-icon="minus" data-split-theme="d" id="todo_list">
+			</ul>
+		</div>	
+		<div data-role="footer" data-position="fixed" data-theme="b" style="text-align:center;padding:5px 0px;">
+			Rotem & Yossi
+		</div> 
+	</div>
+	<div data-role="page" id="add">
+	<div data-role="header" data-position="inline" data-theme="b">
+		<h1>Add New Task</h1>
+	</div>
+	<div data-role="content" data-theme="b">
+		<form action="">
+			<label for="textinput1">
+				Task information
+			</label>
+			<input id="textinput1" placeholder="Enter text here..." value="" type="text"  />
+			<input type="date" id="datepicker" placeholder="Due Date (dd/mm/yyyy)..." />
+			<a href="docs-dialogs.html" data-role="button" data-rel="back" data-theme="b" onClick="save_todo();" data-icon="check">Submit</a>       
+			<a href="index.html" data-icon="delete" data-role="button" data-rel="back" data-theme="c" data-transition="fade" data-direction="reverse" id="cancel">Cancel</a>    
+		</form>
+	</div>
+	</div>
+	<div data-role="page" id="edit">
+	<div data-role="header" data-position="inline" data-theme="b">
+		<h1>Edit Task</h1>
+	</div>
+	<div data-role="content" data-theme="b">
+		<form action="">
+			<label for="textinput1">
+				Task Information
+			</label>
+			<input id="textinputedit" value="" type="text" />
+			<input type="date" id="datepickeredit" />
+			<a id="editSaveBtn" href="docs-dialogs.html" data-role="button" data-rel="back" data-theme="b" itemID="" onClick="save_edit_todo();" data-icon="check">Save</a>       
+			<a href="index.html" data-icon="delete" data-role="button" data-rel="back" data-theme="c" data-transition="fade" data-direction="reverse" onClick="clear_edit_page();" id="cancel">Cancel</a>
+		</form>
+	</div>
+	</div>
+	</body>
+</html>
+
+<script language="javascript">
+var i = localStorage.length;
+function onBodyLoad(){
+	var todo = "";
+	
+	create_new_list();
+	
+	$("#clear").click(function(){
+		localStorage.clear();
+		$("#todo_list li").fadeOut(function(){
+			$(this).html("");
+		});
+	});
+	
+	$("#remove").live("click",function(e){
+		var index = $(this).closest("li").attr("id");
+		$(this).closest("li").slideUp(function(){
+		
+			// remove the selected item
+			localStorage.removeItem('names_'+index);
+			
+			// rearrange localstorage array 
+			for(i=0; i<localStorage.length; i++) {
+			
+			  if( !localStorage.getItem("names_"+i)) {
+				localStorage.setItem("names_"+i, localStorage.getItem('names_' + (i+1) ) );
+				localStorage.removeItem('names_'+ (i+1) );
+			  }
+			}
+			
+			// clear existing list UI
+			$("#todo_list").html("");
+			
+			// create new list
+			create_new_list();
+		});
+	});	
+}	
+
+function create_new_list(){
+	for (var i = 0; i < localStorage.length; i++){
+		todo = JSON.parse(localStorage.getItem('names_'+i));
+		$("#todo_list").append('<li onClick="edit_todo();" id="'+i+'"><a href="#edit" data-rel="dialog">'+todo.title+' '+todo.date+'</a><a href="#" data-rel="dialog" data-transition="slideup" id="remove">Remove</a></li>');
+	}	
+	// Refresh list so jquery mobile can apply iphone look to the list
+	$("#todo_list").listview();
+	$("#todo_list").listview("refresh");	
+}
+function save_todo(){
+	var todo = $("#textinput1").val();
+	var date = $("#datepicker").val();
+	
+	if(todo.length){
+		// store item in local storage
+		localStorage['names_'+i] = JSON.stringify({title: todo, date: date});
+		
+		// Update todo list
+		$("#todo_list").append('<li id="'+i+'" yossi="yes" onClick="edit_todo();"><a href="#edit" data-rel="dialog">'+todo+' '+date+'</a><a href="#" data-rel="dialog" data-transition="slideup" id="remove">Remove</a></li>');
+		
+		// Refresh list so jquery mobile can apply iphone look to the list
+		$("#todo_list").listview();
+		$("#todo_list").listview("refresh");
+		i++;
+	}
+	
+	$('#textinput1').val('');
+	$('#datepicker').val('');
+}
+
+function edit_todo(){
+	$( document ).on( "click", "li", function() {
+		newid = ($(this).attr("id"));
+		todoit = JSON.parse(localStorage.getItem('names_'+newid));
+		clear_edit_page();
+		$('#textinputedit').val(todoit.title);
+		$("#datepickeredit").val(todoit.date);
+		$("#editSaveBtn").attr("itemID",newid);
+	});
+ }	
+ 
+ function clear_edit_page(){
+	$("#textinputedit").val('');
+	$("#datepickeredit").val('');
+ }
+
+function save_edit_todo(){
+	//$( document ).on( "click", "li", function() {
+	//newid = ($(this).attr("id"));
+	//todoit = JSON.parse(localStorage.getItem('names_'+newid));
+	id = $("#editSaveBtn").attr("itemID");
+	localStorage.removeItem('names_'+id);
+	
+	
+	var todo = $("#textinputedit").val();
+	var date = $("#datepickeredit").val();
+		// store item in local storage
+		localStorage['names_'+id] = JSON.stringify({title: todo, date: date});
+		
+		// Update todo list
+		$("#todo_list").append('<li id="'+id+'" yossi="yes" onClick="edit_todo();"><a href="#edit" data-rel="dialog">'+todo+' '+date+'</a><a href="#" data-rel="dialog" data-transition="slideup" id="remove">Remove</a></li>');
+	
+	clear_edit_page();
+	
+		
+		// Refresh list so jquery mobile can apply iphone look to the list
+		$("#todo_list").listview();
+		$("#todo_list").listview("refresh");
+	
+	// clear existing list UI
+			$("#todo_list").html("");
+			
+			// create new list
+			create_new_list();
+	//});	
+}
+ 
+</script>
+
